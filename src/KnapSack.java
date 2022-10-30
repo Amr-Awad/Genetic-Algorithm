@@ -112,9 +112,12 @@ public class KnapSack {
 
         return selectedChromosomes;
     }
-    public static Chromosome crossover(Chromosome[] selected) {
-    	Chromosome offspring = new Chromosome();
-    	offspring.generateEmpty(NumberOfItems);
+    public static Chromosome[] crossover(Chromosome[] selected) {
+    	Chromosome[] offspring = new Chromosome[2];
+    	offspring[0] = new Chromosome();
+    	offspring[1] = new Chromosome();
+    	offspring[0].generateEmpty(NumberOfItems);
+    	offspring[1].generateEmpty(NumberOfItems);
     	float prob = new Random().nextFloat();
     	System.out.println("Probability of crossover for current parents= " + prob + "\n");
     	if(prob < crossoverProbability) {
@@ -123,13 +126,22 @@ public class KnapSack {
 	    	int size = selected[0].genes.length;
 	    	for(int i=0;i<size;i++) {
 	    		if(i < crossoverPoint) {
-	    			offspring.genes[i] = selected[0].genes[i];
+	    			offspring[0].genes[i] = selected[0].genes[i];
 	    		}
 	    		else {
-	    			offspring.genes[i] = selected[1].genes[i];
+	    			offspring[0].genes[i] = selected[1].genes[i];
 	    		}
 	    	}
-	    	calculateSingleFitness(offspring);
+	    	calculateSingleFitness(offspring[0]);
+	    	for(int i=0;i<size;i++) {
+	    		if(i < crossoverPoint) {
+	    			offspring[1].genes[i] = selected[1].genes[i];
+	    		}
+	    		else {
+	    			offspring[1].genes[i] = selected[0].genes[i];
+	    		}
+	    	}
+	    	calculateSingleFitness(offspring[1]);
 	    	return offspring;
     	}
     	return null;
@@ -150,10 +162,11 @@ public class KnapSack {
         {
             parents[i].printGenes();
         }
-    	Chromosome offspring = new Chromosome();
+    	Chromosome[] offspring = new Chromosome[2];
     	offspring = crossover(parents);
     	System.out.println("Offspring:");
-    	offspring.printGenes();
+    	offspring[0].printGenes();
+    	offspring[1].printGenes();
     }
 
 
