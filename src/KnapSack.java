@@ -1,80 +1,125 @@
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 class Chromosome{
+    public int[] genes;
+    public int fitness;
 
-}
-public class KnapSack {
-    static int [] weights;
-    static int [] values;
-    static int NumberOfItems = 5;
-    static int knapWeight;
-    final static int NumberOfPopulation = 5;
-
-    public static int [] generateChromosome() {
-        int[] chromosome = new int[NumberOfItems];
-        for (int i = 0; i < NumberOfItems; i++) {
-            Random rand = new Random(); //instance of random class
-            float float_random = rand.nextFloat();
-
-            chromosome[i] = Math.round(float_random);
-
-        }
-        return chromosome;
+    public void generateEmpty(int numberOfItems) {
+        this.genes = new int[numberOfItems];
     }
 
-    public static ArrayList<int []> generatePopulation() {
-        ArrayList<int []> population = new ArrayList<>();
+    public void generate(int numberOfItems) {
+        this.genes = new int[numberOfItems];
+        for (int i = 0; i < numberOfItems; i++) {
+            Random rand = new Random();
+            float float_random = rand.nextFloat();
+
+            this.genes[i] = Math.round(float_random);
+
+        }
+    }
+
+    public void printGenes() {
+        for(int i=0;i<genes.length;i++) {
+            System.out.print(genes[i]+" ");
+        }
+        System.out.println("fitness= "+this.fitness +"\n");
+    }
+}
+public class KnapSack {
+    static int [] weights = {20,30,10,2,1};
+    static int [] values =  {10,5 ,2 ,7,1};
+    static int NumberOfItems = 5;
+    static int knapWeight = 40;
+    static double crossoverProbability = 0.6;
+
+    final static int NumberOfPopulation = 5;
+
+    public static boolean checkWeight(Chromosome chromosome) {
+        int totalWeight = 0;
+        for (int j = 0; j < NumberOfItems; j++) {
+            if (chromosome.genes[j] == 1) {
+                totalWeight += weights[j];
+            }
+        }
+        if (totalWeight > knapWeight)
+            return false;
+        return true;
+    }
+
+    public static ArrayList<Chromosome> generatePopulation() {
+        ArrayList<Chromosome> population = new ArrayList<>();
         for (int i = 0 ; i<NumberOfPopulation ; i++)
         {
-            int [] chromosome = generateChromosome();
-            int totalWeight = 0;
-            for(int j = 0 ; j<NumberOfItems ; j++)
-            {
-                if(chromosome[j]==1)
-                {
-                    totalWeight += weights[j];
-                }
-            }
-            if(totalWeight<=knapWeight)
+            Chromosome chromosome = new Chromosome();
+            chromosome.generate(NumberOfItems);
+            if(checkWeight(chromosome))
                 population.add(chromosome);
             else
                 i--;
-       }
+        }
+        calculateFitnessValue(population);
         return population;
     }
 
-    public static int [] calculateFitnessValue(ArrayList<int []> population) {
-        int [] fitnessValues = new int[NumberOfItems];
-        for(int i=0 ; i<NumberOfPopulation ; i++)
+    public static void calculateSingleFitness(Chromosome chrom) {
+        chrom.fitness=0;
+        for (int j =0 ; j<NumberOfItems ; j++)
         {
-            int fitnessValue = 0;
-            for (int j =0 ; j<NumberOfItems ; j++)
-            {
-                if(population.get(i)[j] == 1)
-                    fitnessValue+=values[j];
-            }
-            fitnessValues[i] = fitnessValue;
+            if(chrom.genes[j] == 1)
+                chrom.fitness+=values[j];
         }
-        return fitnessValues;
     }
 
-    public st0atic int [] chromosomeSelection(int [] fitnessValues) {
-        int totalFitnessValues = 0;
+    public static void calculateFitnessValue(ArrayList<Chromosome> population) {
         for(int i=0 ; i<NumberOfPopulation ; i++)
-            totalFitnessValues+=fitnessValues[i];
+        {
+            Chromosome current = population.get(i);
+            current.fitness=0;
+            for (int j =0 ; j<NumberOfItems ; j++)
+            {
+                if(current.genes[j] == 1)
+                    current.fitness+=values[j];
+            }
+        }
+    }
 
-        float [] selectionProbability = new float[NumberOfPopulation];
+    public static ArrayList<Chromosome> rankSelection(ArrayList<Chromosome> population) {
+        for (int i = 0; i < population.size() - 1; i++)
+        {
+            int index = i;
+            for (int j = i + 1; j < population.size(); j++){
+                if (population.get(j).fitness < population.get(index).fitness){
+                    index = j;//searching for lowest index
+                }
+            }
+            Chromosome smallerNumber = population.get(index);
+            population.set(index,population.get(i));
+            population.set(i,smallerNumber);
+        }
+        return population;
+    }
+
+    public static Chromosome[] chromosomeSelection(ArrayList<Chromosome> population) {
+        population = rankSelection(population);
+        double totalFitnessValues = 0.0;
+        for(int i=0 ; i<NumberOfPopulation ; i++) {
+            totalFitnessValues+=population.get(i).fitness;
+        }
+
+
+        double [] selectionProbability = new double[NumberOfPopulation];
 
         for(int i =0 ; i<NumberOfPopulation ; i++)
         {
             if(i==0)
-                selectionProbability[i] = fitnessValues[i]/totalFitnessValues;
-
+                selectionProbability[i] = (population.get(i).fitness)/totalFitnessValues;
             else
-                selectionProbability[i] = selectionProbability[i-1] + (fitnessValues[i]/totalFitnessValues);
+                selectionProbability[i] = selectionProbability[i-1] + (population.get(i).fitness/totalFitnessValues);
         }
-        int [] selectedChromosomes = new int[2];
+        Chromosome[] selectedChromosomes = new Chromosome[2];
         for(int i=0 ; i<2 ; i++)
         {
             Random rand = new Random(); //instance of random class
@@ -83,7 +128,15 @@ public class KnapSack {
             for (int j =0 ; j<NumberOfPopulation ; j++)
             {
                 if(float_random <= selectionProbability[j]) {
-                    selectedChromosomes[i] = j;
+                    if(i==1)
+                    {
+                        if(population.get(j)==selectedChromosomes[i-1])
+                        {
+                            i--;
+                            break;
+                        }
+                    }
+                    selectedChromosomes[i] = population.get(j);
                     break;
                 }
             }
@@ -92,14 +145,101 @@ public class KnapSack {
         return selectedChromosomes;
     }
 
+    public static Chromosome[] crossover(Chromosome[] selected) {
+        Chromosome[] offspring = new Chromosome[2];
+        offspring[0] = new Chromosome();
+        offspring[1] = new Chromosome();
+        offspring[0].generateEmpty(NumberOfItems);
+        offspring[1].generateEmpty(NumberOfItems);
+        float prob = new Random().nextFloat();
+        System.out.println("Probability of crossover for current parents= " + prob + "\n");
+        if(prob < crossoverProbability) {
+            int crossoverPoint = new Random().nextInt(1,NumberOfItems-1);
+            System.out.println("Crossover point= " + crossoverPoint + "\n");
+            int size = selected[0].genes.length;
+            for(int i=0;i<size;i++) {
+                if(i < crossoverPoint) {
+                    offspring[0].genes[i] = selected[0].genes[i];
+                }
+                else {
+                    offspring[0].genes[i] = selected[1].genes[i];
+                }
+            }
+            calculateSingleFitness(offspring[0]);
+            for(int i=0;i<size;i++) {
+                if(i < crossoverPoint) {
+                    offspring[1].genes[i] = selected[1].genes[i];
+                }
+                else {
+                    offspring[1].genes[i] = selected[0].genes[i];
+                }
+            }
+            calculateSingleFitness(offspring[1]);
+            for(int i =0 ; i< 2;i++) {
+                if(!checkWeight(offspring[i]))
+                    return selected;
+            }
+            return offspring;
+        }
+        return selected;
+    }
 
+    public static Chromosome[] mutation(Chromosome[] selectedChromosomes) {
+        float Pm = 0.1f;
+        Chromosome[] originalChromosomes = selectedChromosomes;
+        for (int  i = 0 ; i < 2 ; i++) {
+            for (int  j = 0 ; j < selectedChromosomes[i].genes.length ; j++) {
+                Random rand2 = new Random();
+                float float_random = rand2.nextFloat();
+                System.out.println(float_random);
+                if(float_random <= Pm)
+                {
+                    if(selectedChromosomes[i].genes[j] == 1)
+                        selectedChromosomes[i].genes[j] = 0;
+                    else
+                        selectedChromosomes[i].genes[j] = 1;
+                }
+            }
+        }
+        calculateSingleFitness(selectedChromosomes[0]);
+        calculateSingleFitness(selectedChromosomes[1]);
+        for(int i =0 ; i< 2;i++) {
+            if(!checkWeight(selectedChromosomes[i]))
+                return originalChromosomes;
+        }
+        return selectedChromosomes;
+    }
+
+    public static void runAlgorithm() {
+        ArrayList<Chromosome> chromosomes = new ArrayList<>();
+        chromosomes = generatePopulation();
+        calculateFitnessValue(chromosomes);
+        Chromosome[] parents = new Chromosome[2];
+        parents = chromosomeSelection(chromosomes);
+        System.out.println("Population:");
+        for(int i=0 ;i < NumberOfPopulation ; i++)
+        {
+            chromosomes.get(i).printGenes();
+        }
+        System.out.println("Parents:");
+        for(int i=0 ;i < 2 ; i++)
+        {
+            parents[i].printGenes();
+        }
+        Chromosome[] offspring;
+        offspring = crossover(parents);
+        System.out.println("Offspring:");
+        offspring[0].printGenes();
+        offspring[1].printGenes();
+
+        Chromosome[] mutatedOffsprings;
+        mutatedOffsprings = mutation(offspring);
+        System.out.println("Offspring with mutation:");
+        mutatedOffsprings[0].printGenes();
+        mutatedOffsprings[1].printGenes();
+    }
 
     public static void main(String[] args) {
-        int [] chrom = generateChromosome();
-        for(int i=0 ;i < NumberOfItems ; i++)
-        {
-            System.out.println(chrom[i]);
-        }
-
+        runAlgorithm();
     }
 }
