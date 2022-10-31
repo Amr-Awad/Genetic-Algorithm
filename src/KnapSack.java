@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 class Chromosome{
@@ -8,7 +9,7 @@ class Chromosome{
 	public void generateEmpty(int numberOfItems) {
 		this.genes = new int[numberOfItems];
 	}
-	
+
 	public void generate(int numberOfItems) {
 		this.genes = new int[numberOfItems];
 		for (int i = 0; i < numberOfItems; i++) {
@@ -19,7 +20,7 @@ class Chromosome{
 
         }
 	}
-	
+
 	public void printGenes() {
 		for(int i=0;i<genes.length;i++) {
 			System.out.print(genes[i]+" ");
@@ -33,6 +34,7 @@ public class KnapSack {
     static int NumberOfItems = 5;
     static int knapWeight = 40;
     static double crossoverProbability = 0.6;
+
     final static int NumberOfPopulation = 5;
 
     public static ArrayList<Chromosome> generatePopulation() {
@@ -66,6 +68,8 @@ public class KnapSack {
         }
     }
 
+
+
     public static void calculateFitnessValue(ArrayList<Chromosome> population) {
         for(int i=0 ; i<NumberOfPopulation ; i++)
         {
@@ -87,7 +91,7 @@ public class KnapSack {
         	
 
         double [] selectionProbability = new double[NumberOfPopulation];
-
+        
         for(int i =0 ; i<NumberOfPopulation ; i++)
         {
             if(i==0)
@@ -112,6 +116,7 @@ public class KnapSack {
 
         return selectedChromosomes;
     }
+    
     public static Chromosome[] crossover(Chromosome[] selected) {
     	Chromosome[] offspring = new Chromosome[2];
     	offspring[0] = new Chromosome();
@@ -146,6 +151,7 @@ public class KnapSack {
     	}
     	return null;
     }
+    
     public static void runAlgorithm() {
     	ArrayList<Chromosome> chromosomes = new ArrayList<>();
     	chromosomes = generatePopulation();
@@ -168,11 +174,29 @@ public class KnapSack {
     	offspring[0].printGenes();
     	offspring[1].printGenes();
     }
+    
+        public static Chromosome[] mutation(Chromosome[] selectedChromosomes) {
+        float Pm = 0.1f;
+    	for (int  i = 0 ; i < 2 ; i++) {
+    		for (int  j = 0 ; j < selectedChromosomes[i].genes.length ; j++) {
+                Random rand2 = new Random();
+                float float_random = rand2.nextFloat();
+                System.out.println(float_random);
+                if(float_random <= Pm)
+                {
+                    if(selectedChromosomes[i].genes[j] == 1)
+                        selectedChromosomes[i].genes[j] = 0;
+                    else
+                        selectedChromosomes[i].genes[j] = 1;
+                }
+    		}
+    	}
+    	return selectedChromosomes;
+    }
 
 
 
     public static void main(String[] args) {
     	runAlgorithm();
-
     }
 }
