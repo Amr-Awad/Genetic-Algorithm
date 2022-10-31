@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -29,10 +30,10 @@ class Chromosome{
     }
 }
 public class KnapSack {
-    static int [] weights = {20,30,10,2,1};
-    static int [] values =  {10,5 ,2 ,7,1};
-    static int NumberOfItems = 5;
-    static int knapWeight = 40;
+    static int [] weights;
+    static int [] values;
+    static int NumberOfItems;
+    static int knapWeight;
     static double crossoverProbability = 0.6;
 
     final static int NumberOfPopulation = 5;
@@ -239,7 +240,34 @@ public class KnapSack {
         mutatedOffsprings[1].printGenes();
     }
 
-    public static void main(String[] args) {
-        runAlgorithm();
-    }
+    public static void readInput() throws Exception {
+		File file = new File("input.txt");
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		String line;
+		line = br.readLine();
+		int cases = Integer.parseInt(line);
+		for(int i=0;i<cases;i++) {
+			br.readLine();
+			br.readLine();
+			line = br.readLine();
+			knapWeight = Integer.parseInt(line);
+			line = br.readLine();
+			NumberOfItems = Integer.parseInt(line);
+			weights = new int[NumberOfItems];
+			values = new int[NumberOfItems];
+			String[] content;
+			for(int j=0;j<NumberOfItems;j++) {
+				line = br.readLine();
+				content = line.split(" ");
+				weights[j] = Integer.parseInt(content[0]);
+				values[j] = Integer.parseInt(content[1]);
+			}
+			runAlgorithm();
+		}
+		br.close();
+	}
+
+	public static void main(String[] args) throws Exception {
+		readInput();
+	}
 }
