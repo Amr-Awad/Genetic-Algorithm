@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-class Chromosome{
+class Chromosome {
     public int[] genes;
     public int fitness;
 
@@ -22,11 +22,51 @@ class Chromosome{
         }
     }
 
-    public void printGenes() {
-        for(int i=0;i<genes.length;i++) {
-            System.out.print(genes[i]+" ");
+    public void printGenes(int[] values, int[] weights) {
+        int noSelectedItems = 0;
+        int totalValue = 0;
+        ArrayList<Integer> itemValues = new ArrayList<>();
+        ArrayList<Integer> itemWeights = new ArrayList<>();
+
+        for (int i = 0; i < genes.length; i++) {
+            System.out.print(genes[i] + " ");
+            if (genes[i] == 1) {
+                noSelectedItems++;
+                totalValue += values[i];
+                itemValues.add(values[i]);
+                itemWeights.add(weights[i]);
+            }
         }
-        System.out.println("fitness= "+this.fitness +"\n");
+        System.out.print("Number of selected items= " + noSelectedItems + " ");
+        System.out.print("Total value= " + totalValue + " ");
+        System.out.println("fitness= " + this.fitness);
+        for (int i = 0; i < itemValues.size(); i++) {
+            System.out.println("Item " + (i + 1) + " value= " + itemValues.get(i));
+            System.out.println("Item " + (i + 1) + " weight= " + itemWeights.get(i));
+
+        }
+        System.out.println();
+    }
+
+    public boolean equalChromosomes(Chromosome chromosome)
+    {
+        for(int i=0 ; i<genes.length ; i++)
+        {
+            if(this.genes[i] != chromosome.genes[i])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void copyChromosome(Chromosome chromosome)
+    {
+        for(int i=0 ; i<genes.length ; i++)
+        {
+            chromosome.genes[i] = this.genes[i];
+        }
+        chromosome.fitness = this.fitness;
     }
 }
 public class KnapSack {
@@ -56,8 +96,19 @@ public class KnapSack {
         {
             Chromosome chromosome = new Chromosome();
             chromosome.generate(NumberOfItems);
-            if(checkWeight(chromosome))
-                population.add(chromosome);
+            if(checkWeight(chromosome)) {
+                boolean equal=false;
+                for(int j=0 ; j<population.size() ; j++)
+                {
+                    if(chromosome.equalChromosomes(population.get(j))) {
+                        i--;
+                        equal=true;
+                        break;
+                    }
+                }
+                if (!equal)
+                    population.add(chromosome);
+            }
             else
                 i--;
         }
@@ -177,8 +228,10 @@ public class KnapSack {
             }
             calculateSingleFitness(offspring[1]);
             for(int i =0 ; i< 2;i++) {
-                if(!checkWeight(offspring[i]))
-                    return selected;
+                if(!checkWeight(offspring[i])) {
+                    System.out.println("Offspring "+ (i+1) +" is over weight so parent will be chosen");
+                    offspring[i] = selected[i];
+                }
             }
             return offspring;
         }
@@ -187,14 +240,21 @@ public class KnapSack {
 
     public static Chromosome[] mutation(Chromosome[] selectedChromosomes) {
         float Pm = 0.1f;
-        Chromosome[] originalChromosomes = selectedChromosomes;
+        Chromosome[] originalChromosomes = new Chromosome[2];
+        for(int i=0 ; i<2 ; i++)
+        {
+            originalChromosomes[i] = new Chromosome();
+            originalChromosomes[i].generateEmpty(NumberOfItems);
+            selectedChromosomes[i].copyChromosome(originalChromosomes[i]);
+        }
         for (int  i = 0 ; i < 2 ; i++) {
             for (int  j = 0 ; j < selectedChromosomes[i].genes.length ; j++) {
                 Random rand2 = new Random();
                 float float_random = rand2.nextFloat();
-                System.out.println(float_random);
                 if(float_random <= Pm)
                 {
+                    System.out.println("Offspring " + (i+1) + " will be mutated at index " + (j+1));
+                    System.out.println();
                     if(selectedChromosomes[i].genes[j] == 1)
                         selectedChromosomes[i].genes[j] = 0;
                     else
@@ -205,69 +265,105 @@ public class KnapSack {
         calculateSingleFitness(selectedChromosomes[0]);
         calculateSingleFitness(selectedChromosomes[1]);
         for(int i =0 ; i< 2;i++) {
-            if(!checkWeight(selectedChromosomes[i]))
-                return originalChromosomes;
+            if(!checkWeight(selectedChromosomes[i])) {
+                System.out.println("Mutated Offspring "+ (i+1) +" is over weight so original offspring will be chosen");
+                System.out.println();
+                selectedChromosomes[i] = originalChromosomes[i];
+            }
         }
         return selectedChromosomes;
+    }
+
+    public static ArrayList <Chromosome>replacement(ArrayList <Chromosome>population,Chromosome[] mutatedChromosomes)
+    {
+        ArrayList <Chromosome>orderedChromosomes = rankSelection(population);
+        ArrayList <Chromosome>orderedMutatedChromosomes = (new ArrayList<>(List.of(mutatedChromosomes)));
+        for (int i = 0; i < orderedMutatedChromosomes.size(); i++) //4 6 5 7 10 //4 5
+        {
+            if (orderedMutatedChromosomes.get(i).fitness > orderedChromosomes.get(i).fitness) {
+                orderedChromosomes.set(i, orderedMutatedChromosomes.get(i));
+            } else {
+                if (i == 1) {
+                    if (orderedMutatedChromosomes.get(i).fitness > orderedChromosomes.get(i - 1).fitness)
+                        orderedChromosomes.set(i - 1, orderedMutatedChromosomes.get(i));
+                }
+
+            }
+        }
+        return  orderedChromosomes;
     }
 
     public static void runAlgorithm() {
         ArrayList<Chromosome> chromosomes = new ArrayList<>();
         chromosomes = generatePopulation();
-        calculateFitnessValue(chromosomes);
-        Chromosome[] parents = new Chromosome[2];
-        parents = chromosomeSelection(chromosomes);
-        System.out.println("Population:");
-        for(int i=0 ;i < NumberOfPopulation ; i++)
-        {
-            chromosomes.get(i).printGenes();
-        }
-        System.out.println("Parents:");
-        for(int i=0 ;i < 2 ; i++)
-        {
-            parents[i].printGenes();
-        }
-        Chromosome[] offspring;
-        offspring = crossover(parents);
-        System.out.println("Offspring:");
-        offspring[0].printGenes();
-        offspring[1].printGenes();
+        for(int k=0 ; k<3 ; k++) {
+            calculateFitnessValue(chromosomes);
+            Chromosome[] parents;
+            System.out.println("Population:");
+            for (int i = 0; i < NumberOfPopulation; i++) {
+                chromosomes.get(i).printGenes(values,weights);
+            }
+            parents = chromosomeSelection(chromosomes);
+            System.out.println("Parents:");
+            for (int i = 0; i < 2; i++) {
+                parents[i].printGenes(values,weights);
+            }
+            Chromosome[] offspring;
+            offspring = crossover(parents);
+            System.out.println("Offspring:");
+            offspring[0].printGenes(values,weights);
+            offspring[1].printGenes(values,weights);
 
-        Chromosome[] mutatedOffsprings;
-        mutatedOffsprings = mutation(offspring);
-        System.out.println("Offspring with mutation:");
-        mutatedOffsprings[0].printGenes();
-        mutatedOffsprings[1].printGenes();
+            Chromosome[] mutatedOffsprings;
+            mutatedOffsprings = mutation(offspring);
+            System.out.println("Offspring with mutation:");
+            mutatedOffsprings[0].printGenes(values,weights);
+            mutatedOffsprings[1].printGenes(values,weights);
+            chromosomes = replacement(chromosomes,mutatedOffsprings);
+            System.out.println("New Population:");
+            for (int i = 0; i < NumberOfPopulation; i++) {
+                chromosomes.get(i).printGenes(values,weights);
+            }
+        }
     }
 
+    //assuming that there is 2 spaces between each test case
     public static void readInput() throws Exception {
-		File file = new File("input.txt");
-		BufferedReader br = new BufferedReader(new FileReader(file));
-		String line;
-		line = br.readLine();
-		int cases = Integer.parseInt(line);
-		for(int i=0;i<cases;i++) {
-			br.readLine();
-			br.readLine();
-			line = br.readLine();
-			knapWeight = Integer.parseInt(line);
-			line = br.readLine();
-			NumberOfItems = Integer.parseInt(line);
-			weights = new int[NumberOfItems];
-			values = new int[NumberOfItems];
-			String[] content;
-			for(int j=0;j<NumberOfItems;j++) {
-				line = br.readLine();
-				content = line.split(" ");
-				weights[j] = Integer.parseInt(content[0]);
-				values[j] = Integer.parseInt(content[1]);
-			}
-			runAlgorithm();
-		}
-		br.close();
-	}
+        File file = new File("knapsack_input.txt");
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        line = br.readLine();
+        int cases = Integer.parseInt(line);
+        for(int i=0;i<cases;i++) {
 
-	public static void main(String[] args) throws Exception {
-		readInput();
-	}
+            System.out.println();
+            System.out.println("------------------------------------------------------------");
+            System.out.println("Test case " + (i+1));
+            System.out.println("------------------------------------------------------------");
+            System.out.println();
+
+
+            br.readLine();
+            br.readLine();
+            line = br.readLine();
+            NumberOfItems = Integer.parseInt(line);
+            line = br.readLine();
+            knapWeight = Integer.parseInt(line);
+            weights = new int[NumberOfItems];
+            values = new int[NumberOfItems];
+            String[] content;
+            for(int j=0;j<NumberOfItems;j++) {
+                line = br.readLine();
+                content = line.split(" ");
+                weights[j] = Integer.parseInt(content[0]);
+                values[j] = Integer.parseInt(content[1]);
+            }
+            runAlgorithm();
+        }
+        br.close();
+    }
+
+    public static void main(String[] args) throws Exception {
+        readInput();
+    }
 }
